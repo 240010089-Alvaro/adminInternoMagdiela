@@ -1,0 +1,11 @@
+/vendor
+/.env
+/node_modules
+/public/storage
+/storage/*.key
+/tests
+.git
+.gitignore
+.env
+Dockerfile
+.dockerignore
