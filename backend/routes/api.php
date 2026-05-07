@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\CreditController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\HistoryController;
 
 // Auth routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -44,4 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf']);
+
+    // History
+    Route::get('/history', [HistoryController::class, 'index']);
+    Route::delete('/history/{history}', [HistoryController::class, 'destroy']);
+    Route::post('/history/clear', [HistoryController::class, 'clear']);
 });

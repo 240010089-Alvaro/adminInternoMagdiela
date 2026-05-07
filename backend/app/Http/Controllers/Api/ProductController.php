@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\InventoryMovement;
+use App\Models\History;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -60,6 +61,14 @@ class ProductController extends Controller
 
         $product = Product::create($data);
 
+        History::create([
+            'type' => 'cambio',
+            'description' => "Nuevo producto registrado: {$product->name} (SKU: {$product->sku})",
+            'user_id' => $request->user()->id,
+            'reference_type' => 'Product',
+            'reference_id' => $product->id
+        ]);
+
         // Registrar movimiento de inventario inicial
         if ($product->stock > 0) {
             InventoryMovement::create([
@@ -114,6 +123,14 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        History::create([
+            'type' => 'cambio',
+            'description' => "Producto actualizado: {$product->name}",
+            'user_id' => $request->user()->id,
+            'reference_type' => 'Product',
+            'reference_id' => $product->id
+        ]);
+
         // Registrar movimiento de inventario si cambió el stock
         if ($oldStock != $newStock) {
             $diff = $newStock - $oldStock;
@@ -135,6 +152,13 @@ class ProductController extends Controller
         }
 
         $product->delete();
+
+        History::create([
+            'type' => 'cambio',
+            'description' => "Producto eliminado: {$product->name}",
+            'user_id' => request()->user()->id
+        ]);
+
         return response()->json(['message' => 'Producto eliminado']);
     }
 
@@ -156,6 +180,14 @@ class ProductController extends Controller
 
         $product->status = $product->stock > 0 ? 'disponible' : 'agotado';
         $product->save();
+
+        History::create([
+            'type' => 'cambio',
+            'description' => "Stock ajustado para {$product->name}: {$request->type} de {$request->quantity}",
+            'user_id' => $request->user()->id,
+            'reference_type' => 'Product',
+            'reference_id' => $product->id
+        ]);
 
         InventoryMovement::create([
             'product_id' => $product->id,

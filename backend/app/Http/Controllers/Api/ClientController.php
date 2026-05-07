@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\History;
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -41,6 +42,14 @@ class ClientController extends Controller
 
         $client = Client::create($request->only(['name', 'phone', 'email', 'address', 'notes']));
 
+        History::create([
+            'type' => 'cambio',
+            'description' => "Nueva clienta registrada: {$client->name}",
+            'user_id' => $request->user()->id,
+            'reference_type' => 'Client',
+            'reference_id' => $client->id
+        ]);
+
         return response()->json($client, 201);
     }
 
@@ -70,12 +79,27 @@ class ClientController extends Controller
 
         $client->update($request->only(['name', 'phone', 'email', 'address', 'notes']));
 
+        History::create([
+            'type' => 'cambio',
+            'description' => "Información de clienta actualizada: {$client->name}",
+            'user_id' => $request->user()->id,
+            'reference_type' => 'Client',
+            'reference_id' => $client->id
+        ]);
+
         return response()->json($client);
     }
 
     public function destroy(Client $client)
     {
         $client->delete();
+
+        History::create([
+            'type' => 'cambio',
+            'description' => "Clienta eliminada: {$client->name}",
+            'user_id' => request()->user()->id
+        ]);
+
         return response()->json(['message' => 'Clienta eliminada']);
     }
 

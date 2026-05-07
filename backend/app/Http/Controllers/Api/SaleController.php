@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sale;
 use App\Models\Credit;
 use App\Models\Client;
+use App\Models\History;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -78,6 +79,16 @@ class SaleController extends Controller
             }
 
             DB::commit();
+
+            History::create([
+                'type' => 'venta',
+                'description' => "Venta registrada" . ($sale->client ? " a " . $sale->client->name : ($sale->customer_name ? " a " . $sale->customer_name : "")),
+                'amount' => $sale->total,
+                'user_id' => $request->user()->id,
+                'reference_type' => 'Sale',
+                'reference_id' => $sale->id
+            ]);
+
             return response()->json($sale->load(['client']), 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -105,6 +116,16 @@ class SaleController extends Controller
                 $sale->client->decrement('total_purchases', $sale->total); 
             }
             $sale->update(['status' => 'cancelada']);
+
+            History::create([
+                'type' => 'cambio',
+                'description' => "Venta #{$sale->id} cancelada",
+                'amount' => $sale->total,
+                'user_id' => request()->user()->id,
+                'reference_type' => 'Sale',
+                'reference_id' => $sale->id
+            ]);
+
             DB::commit();
             return response()->json(['message' => 'Registro cancelado']);
         } catch (\Exception $e) { 

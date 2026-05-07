@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Credit;
 use App\Models\CreditPayment;
 use App\Models\Client;
+use App\Models\History;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -59,6 +60,16 @@ class CreditController extends Controller
             }
 
             DB::commit();
+
+            History::create([
+                'type' => 'abono',
+                'description' => "Abono de " . ($credit->client?->name ?? 'Cliente') . " a su crédito #{$credit->id}",
+                'amount' => $request->amount,
+                'user_id' => $request->user()->id,
+                'reference_type' => 'Credit',
+                'reference_id' => $credit->id
+            ]);
+
             return response()->json($credit->load('payments'));
         } catch (\Exception $e) {
             DB::rollBack();
