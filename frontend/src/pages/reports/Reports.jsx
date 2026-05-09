@@ -99,9 +99,16 @@ export default function Reports() {
             </div>
           </div>
 
+          {data.credits_issued?.length > 0 && <div className="card" style={{marginBottom:24}}>
+            <div className="card-header"><span className="card-title">Créditos Otorgados en el Periodo (Fiados)</span></div>
+            <div className="table-wrapper"><table><thead><tr><th>Clienta</th><th>Total Crédito</th><th>Abonado</th><th>Saldo Pendiente</th><th>Fecha</th></tr></thead><tbody>
+              {data.credits_issued.map(c => <tr key={c.id}><td style={{fontWeight:600}}>{c.client?.name}</td><td>{formatMoney(c.total_amount)}</td><td style={{color:'var(--success)'}}>{formatMoney(c.paid_amount)}</td><td style={{color:'var(--danger)',fontWeight:700}}>{formatMoney(c.balance)}</td><td style={{color:'var(--text-muted)'}}>{new Date(c.created_at).toLocaleDateString()}</td></tr>)}
+            </tbody></table></div>
+          </div>}
+
           {data.active_debts?.length > 0 && <div className="card">
-            <div className="card-header"><span className="card-title">Deudas Activas</span></div>
-            <div className="table-wrapper"><table><thead><tr><th>Clienta</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Fecha</th></tr></thead><tbody>
+            <div className="card-header"><span className="card-title">Todas las Deudas Pendientes (Saldo General)</span></div>
+            <div className="table-wrapper"><table><thead><tr><th>Clienta</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Vence</th></tr></thead><tbody>
               {data.active_debts.map(d => <tr key={d.id}><td style={{fontWeight:600}}>{d.client?.name}</td><td>{formatMoney(d.total_amount)}</td><td style={{color:'var(--success)'}}>{formatMoney(d.paid_amount)}</td><td style={{color:'var(--danger)',fontWeight:700}}>{formatMoney(d.balance)}</td><td style={{color:'var(--text-muted)'}}>{d.due_date || '—'}</td></tr>)}
             </tbody></table></div>
           </div>}

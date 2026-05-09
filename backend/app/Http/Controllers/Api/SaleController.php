@@ -36,16 +36,21 @@ class SaleController extends Controller
 
         DB::beginTransaction();
         try {
-            $total = $request->total;
+            $total = round((float) $request->total, 2);
             $clientId = $request->client_id;
 
-            // Si es crédito y no tenemos un ID de clienta pero sí un nombre manual, la registramos automáticamente
+            // Si es crédito y no tenemos un ID de clienta pero sí un nombre manual, buscar o registrar automáticamente
             if ($request->payment_method === 'credito' && !$clientId && $request->customer_name) {
-                $newClient = Client::create([
-                    'name' => $request->customer_name,
-                    'phone' => 'N/A'
-                ]);
-                $clientId = $newClient->id;
+                $existingClient = Client::where('name', $request->customer_name)->first();
+                if ($existingClient) {
+                    $clientId = $existingClient->id;
+                } else {
+                    $newClient = Client::create([
+                        'name' => $request->customer_name,
+                        'phone' => 'N/A'
+                    ]);
+                    $clientId = $newClient->id;
+                }
             }
 
             $sale = Sale::create([
@@ -62,15 +67,33 @@ class SaleController extends Controller
             ]);
 
             if ($request->payment_method === 'credito' && $clientId) {
-                Credit::create([
-                    'client_id' => $clientId, 
-                    'sale_id' => $sale->id, 
-                    'total_amount' => $total, 
-                    'paid_amount' => 0, 
-                    'balance' => $total, 
-                    'status' => 'pendiente', 
-                    'due_date' => $request->due_date
-                ]);
+                // Buscar si ya existe un crédito pendiente para esta clienta
+                $existingCredit = Credit::where('client_id', $clientId)
+                    ->where('status', 'pendiente')
+                    ->first();
+
+                if ($existingCredit) {
+                    // Sumar al crédito existente
+                    $existingCredit->total_amount = round((float) $existingCredit->total_amount + $total, 2);
+                    $existingCredit->balance = round((float) $existingCredit->balance + $total, 2);
+                    // Actualizar la fecha límite si se proporcionó una nueva
+                    if ($request->due_date) {
+                        $existingCredit->due_date = $request->due_date;
+                    }
+                    $existingCredit->save();
+                } else {
+                    // Crear nuevo crédito
+                    Credit::create([
+                        'client_id' => $clientId, 
+                        'sale_id' => $sale->id, 
+                        'total_amount' => $total, 
+                        'paid_amount' => 0, 
+                        'balance' => $total, 
+                        'status' => 'pendiente', 
+                        'due_date' => $request->due_date
+                    ]);
+                }
+
                 $client = Client::find($clientId);
                 $client->increment('total_debt', $total);
                 $client->increment('total_purchases', $total);
@@ -83,7 +106,7 @@ class SaleController extends Controller
             History::create([
                 'type' => 'venta',
                 'description' => "Venta registrada" . ($sale->client ? " a " . $sale->client->name : ($sale->customer_name ? " a " . $sale->customer_name : "")),
-                'amount' => $sale->total,
+                'amount' => $total,
                 'user_id' => $request->user()->id,
                 'reference_type' => 'Sale',
                 'reference_id' => $sale->id

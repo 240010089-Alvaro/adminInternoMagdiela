@@ -47,8 +47,8 @@ class CreditController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            $credit->paid_amount += $request->amount;
-            $credit->balance -= $request->amount;
+            $credit->paid_amount = round((float) $credit->paid_amount + (float) $request->amount, 2);
+            $credit->balance = round((float) $credit->balance - (float) $request->amount, 2);
             if ($credit->balance <= 0) {
                 $credit->balance = 0;
                 $credit->status = 'liquidado';

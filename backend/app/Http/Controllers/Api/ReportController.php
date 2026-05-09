@@ -33,6 +33,7 @@ class ReportController extends Controller
             'sales_by_category' => $data['sales_by_category'],
             'sales_by_payment' => $data['sales_by_payment'],
             'active_debts' => $data['active_debts'],
+            'credits_issued' => $data['credits_issued'],
             'total_debt' => $data['total_debt'],
         ]);
 
@@ -106,6 +107,12 @@ class ReportController extends Controller
             ->orderByDesc('balance')
             ->get();
 
+        $creditsIssued = Credit::whereBetween('created_at', [$from, $to])
+            ->with('client:id,name')
+            ->select('id', 'client_id', 'total_amount', 'paid_amount', 'balance', 'due_date', 'created_at')
+            ->orderByDesc('created_at')
+            ->get();
+
         $totalDebt = (float) Credit::where('status', 'pendiente')->sum('balance');
 
         return [
@@ -117,6 +124,7 @@ class ReportController extends Controller
             'sales_by_category' => $salesByCategory,
             'sales_by_payment' => $salesByPayment,
             'active_debts' => $activeDebts,
+            'credits_issued' => $creditsIssued,
             'total_debt' => $totalDebt,
         ];
     }
