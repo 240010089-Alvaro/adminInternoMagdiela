@@ -17,6 +17,11 @@ class CreditController extends Controller
         $query = Credit::with(['client', 'sale']);
         if ($request->status) $query->where('status', $request->status);
         if ($request->client_id) $query->where('client_id', $request->client_id);
+        if ($request->search) {
+            $query->whereHas('client', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
+            });
+        }
         return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
     }
 

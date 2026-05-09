@@ -9,6 +9,7 @@ export default function CreditList() {
   const [credits, setCredits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [showPayment, setShowPayment] = useState(null);
@@ -20,10 +21,10 @@ export default function CreditList() {
 
   const fetchCredits = () => {
     setLoading(true);
-    api.get('/credits', { params: { page, status: statusFilter } }).then(r => { setCredits(r.data.data); setLastPage(r.data.last_page); }).finally(() => setLoading(false));
+    api.get('/credits', { params: { page, status: statusFilter, search: searchTerm || undefined } }).then(r => { setCredits(r.data.data); setLastPage(r.data.last_page); }).finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchCredits(); }, [page, statusFilter]);
+  useEffect(() => { fetchCredits(); }, [page, statusFilter, searchTerm]);
 
   const openPayment = (credit) => { setShowPayment(credit); setPayAmount(''); setPayNotes(''); };
 
@@ -49,6 +50,24 @@ export default function CreditList() {
       <div className="admin-content">
         <div className="toolbar">
           <div className="toolbar-left">
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'var(--text-muted)',fontSize:'0.9rem',pointerEvents:'none'}}>🔍</span>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Buscar clienta..."
+                value={searchTerm}
+                onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
+                style={{paddingLeft:36,minWidth:220,height:42}}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => { setSearchTerm(''); setPage(1); }}
+                  style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--text-muted)',cursor:'pointer',fontSize:'1.1rem',padding:4}}
+                  title="Limpiar búsqueda"
+                >✕</button>
+              )}
+            </div>
             <select className="filter-select" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
               <option value="">Todos los créditos</option>
               <option value="pendiente">Pendientes</option>
